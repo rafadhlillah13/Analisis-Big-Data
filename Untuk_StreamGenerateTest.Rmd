@@ -1,0 +1,15 @@
+```{r}
+df_<-na.omit(read.csv(("C:/Users/mafad/Downloads/us-counties.csv"))[,c(5,6)])#pilih untuk memodelkan cases vs deaths
+
+
+write.csv(df_, "C:/Users/mafad/Downloads/ABD_TB/df_bersih.CSV", row.names=FALSE)
+
+library(sparklyr)
+
+spark_home <- "C:/Users/mafad/AppData/Local/spark/spark-3.5.1-bin-hadoop3"
+sc <- spark_connect(master = "local", spark_home = spark_home)
+
+sparklyr::stream_generate_test(df_, "pemrosesan-alir-shiny",
+ rep(600, 1))
+```
+

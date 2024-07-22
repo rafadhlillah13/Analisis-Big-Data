@@ -1,0 +1,21 @@
+```{r}
+df_<-na.omit(read.csv(("C:/Users/mafad/Downloads/us-counties.csv")))
+summary(df_)
+```
+
+```{r}
+df_ <- df_[,-c(2,3,4)]
+plot(x=df_$cases,y=df_$deaths,main="Cases vs Deaths NY Times Covid-19 Reporting")
+```
+```{r}
+table(df_$date)[1:10]#ukuran banyaknya pencatatan tiap harinya(ambil 10 saja)
+cat("Dicatat sebanyak hari :",length(table(df_$date)))#total banyak hari pencatatan
+cat("\nHari pertama :",df_$date[1])#hari pertama
+cat("\nHari terakhir:",df_$date[nrow(df_)])#hari terakhir
+cat("\nRerata pencatatan di hari yang sama :",mean(table(df_$date)))#rerata ukuran pencatatan tiap harinya
+```
+
+Link download dataset us-counties.csv
+https://data.humdata.org/dataset/nyt-covid-19-data
+
+

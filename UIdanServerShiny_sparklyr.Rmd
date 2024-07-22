@@ -1,0 +1,70 @@
+---
+title: "Untitled"
+author: "MuhammadFathirFadillah"
+date: "2024-04-27"
+output: html_document
+---
+
+```{r}
+table()
+```
+
+```{r}
+library(shiny)
+library(sparklyr)
+library(cluster)
+
+df_<-na.omit(read.csv(("C:/Users/mafad/Downloads/us-counties.csv"))[,c(5,6)])
+df<-na.omit(df_)
+
+unlink("pemrosesan-alir-shiny", recursive = TRUE)
+dir.create("pemrosesan-alir-shiny", showWarnings = FALSE)
+sc_stream <- spark_connect(
+ master = "local", version = "3.5.1",
+ config = list(sparklyr.sanitize.column.names = FALSE))
+
+kmeans_silhouette <- function(data, k) {
+  cluster_result <- kmeans(data, centers = k)
+  silhouette_score <- silhouette(cluster_result$cluster, dist(data))
+  return(mean(silhouette_score[,3]))
+}
+ui <- pageWithSidebar(
+  headerPanel('NY Times Covid k-means clustering from Spark stream'),
+  sidebarPanel(
+    selectInput('xcol', 'X Variable', names(df_)),
+    selectInput('ycol', 'Y Variable', names(df_), selected=names(df_)[[2]]),
+    numericInput('clusters', 'Cluster count', 2, min = 2, max = 9)
+  ),
+  mainPanel(plotOutput('plot1'),
+            textOutput('siluet'),
+            textOutput('pusat')
+            )
+)
+server <- function(input, output, session) {
+  df_ <- stream_read_csv(sc_stream, "pemrosesan-alir-shiny", columns = sapply(df_, class)) %>%
+    reactiveSpark()
+  
+  selectedData <- reactive(df_()[, c(input$xcol, input$ycol)])
+  clusters <- reactive(kmeans(selectedData(), input$clusters))
+  
+  koefisien_siluet <- reactive({
+    silhouette(clusters()$cluster, dist(selectedData()))
+  })
+  
+  output$plot1 <- renderPlot({
+    par(mar = c(5.1, 4.1, 0, 1))
+    plot(selectedData(), col = clusters()$cluster, pch = 16, cex = 4,lwd=20)
+    points(clusters()$centers, pch = 3, cex = 1, lwd = 10,col="gold")
+    
+  })
+  output$siluet <- renderText({
+    result <- kmeans_silhouette(selectedData(), input$clusters)
+    sprintf("Koefisien Siluet:\n%s", result)
+  })
+  output$pusat <- renderText({
+    sprintf("Pusat Kluster:\n%s", format(clusters()$centers))
+  })
+}
+shinyApp(ui,server)
+help("points")
+```
